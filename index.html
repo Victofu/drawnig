@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang='fr'>
+<head>
+  <meta charset='utf-8'>
+  <title>Drawing</title>
+</head>
+	<body onload='init()'>
+
+		<canvas id='canvas' width='620' height='420' border='1px solid #888'></canvas>
+
+		<script src='/socket.io/socket.io.js'></script>
+		<script type='text/javascript'>
+			var socket = io.connect('http://localhost:8080'),
+					canvas, ctx,
+					flag = false,
+					prevX,
+					prevY,
+					currX,
+					currY,
+					color = 'black',
+					width = 2;
+
+
+			function init() {
+				canvas = document.getElementById('canvas');
+				ctx = canvas.getContext('2d');
+
+				canvas.addEventListener('mousedown', function(e) {
+					findxy('down', e);
+				});
+
+				canvas.addEventListener('mouseup', function(e) {
+					findxy('up', e);
+				});
+
+				canvas.addEventListener('mouseout', function(e) {
+					findxy('out', e);
+				});
+
+				canvas.addEventListener('mousemove', function(e) {
+					findxy('move', e);
+				});
+			};
+
+
+			function draw(x1, y1, x2, y2) {
+				ctx.beginPath();
+				ctx.moveTo(x1, y1);
+				ctx.lineTo(x2, y2);
+				ctx.lineWidth = width;
+				ctx.strokeStyle = color;
+				ctx.stroke();
+			}
+
+			function findxy(state, e) {
+				if (state == 'down') {
+					currX = e.clientX - canvas.offsetLeft;
+					currY = e.clientY - canvas.offsetTop;
+			    
+					flag = true;
+				}
+				if (state == 'up' || state == "out") {
+					flag = false;
+				}
+				if (state == 'move') {
+					if (flag) {
+						prevX = currX;
+						prevY = currY;
+						currX = e.clientX - canvas.offsetLeft;
+						currY = e.clientY - canvas.offsetTop;
+						var coordinates = [prevX, prevY, currX, currY];
+						socket.emit('coordinates', coordinates)
+					}
+				}
+			};
+
+			socket.on('coordinates', function(coordinates) {
+				draw(coordinates[0], coordinates[1], coordinates[2], coordinates[3]);
+			});
+
+		</script>
+
+	</body>
+</html>
